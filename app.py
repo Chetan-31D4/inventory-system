@@ -12,6 +12,8 @@ from flask_mail import Mail, Message
 from flask import Flask, render_template, session, redirect, url_for
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from dotenv import load_dotenv  
+load_dotenv() 
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -26,14 +28,15 @@ app.config['MAIL_DEFAULT_SENDER']= ('Inventory System', 'no-reply@mydomain.com')
 mail = Mail(app)
 
 # PostgreSQL connection parameters (adjust as needed or via environment variables)
-DB_USER = os.environ.get('PG_USER', 'inv_user')
-DB_PASS = os.environ.get('PG_PASS', 'inv_pass123')
-DB_HOST = os.environ.get('PG_HOST', 'localhost')
-DB_PORT = os.environ.get('PG_PORT', '5432')
-DB_NAME = os.environ.get('PG_DB',   'inventorydb')
+# DB_USER = os.environ.get('PG_USER', 'inv_user')
+# DB_PASS = os.environ.get('PG_PASS', 'inv_pass123')
+# DB_HOST = os.environ.get('PG_HOST', 'localhost')
+# DB_PORT = os.environ.get('PG_PORT', '5432')
+# DB_NAME = os.environ.get('PG_DB',   'inventorydb')
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
+DATABASE_URL = os.environ['DATABASE_URL']
 
 def get_db():
     """

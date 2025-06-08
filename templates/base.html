@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inventory Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Tailwind CDN (or replace with your local build) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- In base.html, just before the closing </body> -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans antialiased">
+
+  <!-- NAVBAR -->
+  <nav class="bg-white shadow-md">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="text-2xl font-semibold text-gray-800">
+        Inventory Dashboard
+      </div>
+      {% if session['username'] %}
+        <div class="flex items-center space-x-6">
+          {% if session['role'] == 'admin' %}
+            <div class="relative">
+              <button onclick="toggleDropdown()" class="relative focus:outline-none">
+                <span class="text-2xl">🔔</span>
+                {% if edit_requests and edit_requests|length > 0 %}
+                  <span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {{ edit_requests|length }}
+                  </span>
+                {% endif %}
+              </button>
+
+              <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded shadow-lg z-50 max-h-96 overflow-y-auto">
+                <div class="p-2 font-bold border-b">Pending Edit Requests</div>
+                {% if edit_requests %}
+                  {% for req in edit_requests %}
+                    <div class="p-3 hover:bg-gray-100 text-sm border-b">
+                      <div class="font-medium">From: {{ req['username'] }}</div>
+                      <div class="text-gray-700 text-xs">
+                        Product: {{ req['product_name'] }}<br>
+                        Quantity: {{ req['quantity'] }}<br>
+                        Reason: {{ req['reason'] }}<br>
+                        Sub-Reason: {{ req['sub_reason'] or '—' }}<br>
+                        Drone No.: {{ req['drone_number'] }}
+                      </div>
+                      <!-- NEW: GET links to show the comment form -->
+                      <div class="mt-2 flex gap-2">
+                        <a href="{{ url_for('approve_request', request_id=req['id']) }}"
+                          class="text-green-600 hover:underline text-xs">
+                          Approve
+                        </a>
+                        <a href="{{ url_for('reject_request', request_id=req['id']) }}"
+                          class="text-red-600 hover:underline text-xs">
+                          Reject
+                        </a>
+                      </div>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="p-2 text-sm text-gray-500">No pending requests</div>
+                {% endif %}
+              </div>
+            </div>
+            <script>
+              function toggleDropdown() {
+                document.getElementById('notifDropdown').classList.toggle('hidden');
+              }
+            </script>
+          {% endif %}
+          <span class="text-sm text-gray-600">
+            Logged in as: <strong class="text-gray-800">{{ session['username'] }}</strong> ({{ session['role'] }})
+          </span>
+          <a href="{{ url_for('logout') }}" class="text-red-600 hover:text-red-800 text-sm">Logout</a>
+        </div>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- FLASH MESSAGES -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container mx-auto px-4 mt-4">
+        {% for category, message in messages %}
+          <div class="mb-2 px-4 py-2 rounded text-white 
+            {% if category == 'success' %}bg-green-500{% endif %}
+            {% if category == 'info'    %}bg-blue-500{% endif %}
+            {% if category == 'error'   %}bg-red-500{% endif %}
+          ">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- PAGE CONTENT -->
+  <div class="container mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </div>
+  <script>
+    /**
+     * Attempts to reload the page every 15 seconds, but only if
+     * no form‐element (input, textarea, select, button, etc.) is focused.
+     */
+    (function scheduleReload() {
+      setTimeout(() => {
+        // Which element currently has the browser’s focus?
+        const active = document.activeElement;
+
+        // If the focused element is an <input>, <textarea>, or <select>, etc., skip reload:
+        const tag = active && active.tagName ? active.tagName.toLowerCase() : null;
+        const interactiveTags = ['input', 'textarea', 'select', 'button'];
+
+        if (!interactiveTags.includes(tag)) {
+          // Nobody is typing or selecting right now, so it's “safe” to refresh
+          window.location.reload();
+        } else {
+          // The user is currently in a form field—delay and check again in 15s
+          scheduleReload();
+        }
+      }, 15000); // 15 000ms = 15 seconds
+    })();
+  </script>
+</body>
+</html>

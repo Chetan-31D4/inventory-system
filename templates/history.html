@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-2xl font-bold">
+      📝 {% if session['role'] == 'viewer' %}My{% else %}All{% endif %} Request History
+    </h2>
+
+    {% if session['role'] == 'admin' %}
+      <!-- Search box + Download button (only for admins) -->
+      <div class="flex items-center gap-2">
+        <input
+          id="searchBox"
+          type="text"
+          placeholder="Search requests..."
+          class="border px-3 py-2 rounded text-sm"
+        />
+        <button
+          id="downloadBtn"
+          class="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded"
+        >
+          Download Filtered Excel
+        </button>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="overflow-x-auto">
+    <table id="historyTable" class="min-w-full bg-white border border-gray-200 mb-4">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">ID</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Product</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Qty</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Reason</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Sub Reason</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Drone No.</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Status</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Requested At</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Decision At</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Admin</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Requested By</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Used</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Remaining</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">GST-Excl (₹)</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Total (₹)</th>
+          {% if session['role'] == 'viewer' %}
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600">Action</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in history %}
+          <tr class="border-b even:bg-gray-50 odd:bg-white">
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['id'] }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['product_name'] }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['quantity'] }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['reason'] }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['sub_reason'] or '—' }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['drone_number'] }}</td>
+            <td class="px-4 py-2 text-sm">
+              {% if row['status'] == 'pending' %}
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pending</span>
+              {% elif row['status'] == 'approved' %}
+                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Approved</span>
+              {% else %}
+                <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Rejected</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['requested_at'] }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['decision_at'] or '—' }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['decided_by'] or '—' }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['username'] }}</td>
+
+            <!-- Used & Remaining -->
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['used'] }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">{{ row['remaining'] }}</td>
+            <td class="px-4 py-2 text-sm text-gray-700">
+              {{ "{:.2f}".format(row['gst_exclusive']) }}
+            </td>
+            <td class="px-4 py-2 text-sm text-gray-700">
+              {{ "{:.2f}".format(row['total_inclusive']) }}
+            </td>
+            {% if session['role'] == 'viewer' %}
+              <td class="px-4 py-2 text-sm text-gray-700">
+                {% if row['username'] == session['username'] and row['status'] == 'approved' %}
+                  <a
+                    href="{{ url_for('edit_usage', request_id=row['id']) }}"
+                    class="text-blue-600 underline text-xs"
+                  >
+                    Update Usage
+                  </a>
+                {% endif %}
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if session['role'] == 'admin' %}
+  <!-- JS for filtering and downloading Excel (only admins need this) -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const tbl        = document.getElementById("historyTable");
+      const searchBox  = document.getElementById("searchBox");
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      // 1) Live‐filter rows based on searchBox input
+      searchBox.addEventListener("input", () => {
+        const filter = searchBox.value.toLowerCase();
+        Array.from(tbl.querySelectorAll("tbody tr")).forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(filter) ? "" : "none";
+        });
+      });
+
+      // 2) Download only visible rows as an Excel file
+      downloadBtn.addEventListener("click", () => {
+        const visibleData = [];
+
+        // We need to send columns in the same order your server expects:
+        // ['Product', 'Qty', 'Status', 'Requested At', 'Decision At', 'Admin', 'Requested By']
+        // (If you want to include Used/Remaining, you can expand this array and adjust your server code.)
+        Array.from(tbl.querySelectorAll("tbody tr")).forEach(row => {
+          if (row.style.display === "none") return;
+          const cols = row.querySelectorAll("td");
+          visibleData.push([
+            cols[0].innerText,  // ID
+            cols[1].innerText,  // Product
+            cols[2].innerText,  // Qty
+            cols[3].innerText,  // Reason
+            cols[4].innerText,  // Sub reason
+            cols[5].innerText,  // Drone no.
+            cols[6].innerText,  // Status
+            cols[7].innerText,  // Requested At
+            cols[8].innerText,  // Decision At
+            cols[9].innerText,  // Admin (decided_by)
+            cols[10].innerText,  // Requested By (username)
+            cols[11].innerText, // used
+            cols[12].innerText  // Remaining
+            // If you want to include Used/Remaining here,
+            // add cols[11].innerText and cols[12].innerText
+          ]);
+        });
+
+        fetch("/api/download-filtered-excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: visibleData })
+        })
+        .then(res => {
+          if (!res.ok) {
+            alert("Failed to download Excel.");
+            return null;
+          }
+          return res.blob();
+        })
+        .then(blob => {
+          if (!blob) return;
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "filtered_request_history.xlsx";
+          a.click();
+          window.URL.revokeObjectURL(url);
+        })
+        .catch(() => alert("Download error."));
+      });
+    });
+  </script>
+  {% endif %}
+{% endblock %}

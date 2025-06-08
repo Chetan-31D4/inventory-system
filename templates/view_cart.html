@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Cart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-6 bg-gray-50 font-sans">
+
+    <h1 class="text-2xl font-bold mb-4">My Cart</h1>
+
+    {% if cart %}
+        <form method="POST" action="{{ url_for('submit_cart') }}">
+            <table class="table-auto w-full border-collapse border border-gray-300">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border border-gray-300 px-4 py-2">Product Name</th>
+                        <th class="border border-gray-300 px-4 py-2">Quantity</th>  <!-- NEW COLUMN -->
+                        <th class="border border-gray-300 px-4 py-2">Reason</th>
+                        <th class="border border-gray-300 px-4 py-2">Sub Reason</th>
+                        <th class="border border-gray-300 px-4 py-2">Drone Number</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart %}
+                    <tr class="border-b">
+                        <td class="border border-gray-300 px-4 py-2">{{ item.product_name }}</td>
+                        <td class="border border-gray-300 px-4 py-2">{{ item.quantity }}</td>  <!-- SHOW QUANTITY -->
+                        <td class="border border-gray-300 px-4 py-2">{{ item.reason }}</td>
+                        <td class="border border-gray-300 px-4 py-2">{{ item.sub_reason }}</td>
+                        <td class="border border-gray-300 px-4 py-2">{{ item.drone_number }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button
+                type="submit"
+                onclick="return confirm('Are you sure you want to submit all requests?')"
+                class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+                Submit All Requests
+            </button>
+        </form>
+    {% else %}
+        <p class="text-gray-500 italic">Your cart is empty.</p>
+    {% endif %}
+
+    <a href="{{ url_for('dashboard') }}" class="inline-block mt-4 text-blue-600 hover:underline">
+      ← Back to Dashboard
+    </a>
+
+</body>
+</html>

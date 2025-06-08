@@ -1,0 +1,43 @@
+{# templates/contact_us.html #}
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mx-auto px-4 py-6">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">Contact Us</h2>
+
+    <div class="bg-white rounded-lg shadow-sm p-6 space-y-4">
+      <p class="text-gray-700">
+        If you need any assistance, please reach out to one of our administrators below:
+      </p>
+
+      <ul class="list-disc pl-5 space-y-2">
+        <li>
+          <span class="font-semibold">Chetan Singhal</span><br>
+          📧 <a href="mailto:chetan@example.com" class="text-blue-600 hover:underline">chetan@example.com</a><br>
+          📱 +91-12345 67890
+        </li>
+        <li>
+          <span class="font-semibold">Pulkit Mittal</span><br>
+          📧 <a href="mailto:pulkit@example.com" class="text-blue-600 hover:underline">pulkit@example.com</a><br>
+          📱 +91-23456 78901
+        </li>
+        <li>
+          <span class="font-semibold">Karthik R</span><br>
+          📧 <a href="mailto:karthik@example.com" class="text-blue-600 hover:underline">karthik@example.com</a><br>
+          📱 +91-34567 89012
+        </li>
+      </ul>
+
+      <p class="text-sm text-gray-500 mt-4">
+        Last updated: {{ last_updated }}
+      </p>
+    </div>
+
+    <div class="mt-6">
+      <a href="{{ url_for('dashboard') }}"
+         class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-sm text-gray-800 rounded shadow-sm">
+        ← Back to Dashboard
+      </a>
+    </div>
+  </div>
+{% endblock %}

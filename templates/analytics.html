@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="container mx-auto px-4 py-6">
+    <h2 class="text-2xl font-bold mb-6">📊 Usage Analytics</h2>
+
+    <!-- ────── Chart #1: Most Requested Items ────── -->
+    <div class="bg-white shadow rounded-lg p-4 mb-8">
+      <h3 class="text-lg font-semibold mb-2">Top 10 Most Requested (Last 30 days)</h3>
+      <canvas id="topRequestedChart" class="w-full" height="200"></canvas>
+    </div>
+
+    <!-- ────── Chart #2: Daily Usage Trend ────── -->
+    <div class="bg-white shadow rounded-lg p-4">
+      <h3 class="text-lg font-semibold mb-2">Daily Approved Quantity (Last 30 days)</h3>
+      <canvas id="usageTrendChart" class="w-full" height="200"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // ───────────── Build “Most Requested” Bar Chart ─────────────
+    const topRequestedCtx = document.getElementById('topRequestedChart').getContext('2d');
+
+    // Labels = product names, Data = total_requested
+    const topProductNames   = {{ top_requested | map(attribute='product_name') | list | tojson }};
+    const topProductTotals  = {{ top_requested | map(attribute='total_requested') | list | tojson }};
+
+    new Chart(topRequestedCtx, {
+      type: 'bar',
+      data: {
+        labels: topProductNames,
+        datasets: [{
+          label: 'Total Approved Quantity',
+          data: topProductTotals,
+          backgroundColor: 'rgba(59, 130, 246, 0.6)',
+          borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+
+
+    // ───────────── Build “Usage Trend” Line Chart ─────────────
+    const usageTrendCtx = document.getElementById('usageTrendChart').getContext('2d');
+
+    // For x-axis labels, convert each day_date to string
+    const trendDates  = {{ usage_trend | map(attribute='day_date') | map('string') | list | tojson }};
+    const trendValues = {{ usage_trend | map(attribute='daily_approved') | list | tojson }};
+
+    new Chart(usageTrendCtx, {
+      type: 'line',
+      data: {
+        labels: trendDates,
+        datasets: [{
+          label: 'Quantity Approved',
+          data: trendValues,
+          fill: false,
+          borderColor: 'rgba(16, 185, 129, 1)',   // tailwind emerald-500
+          tension: 0.2
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            type: 'category',
+            title: { display: true, text: 'Date' }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Units Approved' },
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+  </script>
+{% endblock %}
